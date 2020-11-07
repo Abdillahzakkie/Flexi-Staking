@@ -259,7 +259,7 @@ contract FlexiCoinStaking is Ownable {
         address _user = msg.sender;
         require(registered[_user], "Not a stakeholder");
         require(rewardToShare > 0, "No reward to share at this time");
-        require(block.timestamp > time[_user], "Can only call this function once a week");
+        require(block.timestamp > time[_user], "wait a week from last call");
         
         time[_user] = block.timestamp + 7 days;
         uint _initialStake = stakes[_user];
