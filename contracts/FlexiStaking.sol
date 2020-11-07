@@ -159,6 +159,12 @@ contract FlexiCoinStaking is Ownable {
     mapping(address => ReferralBonus) public bonus;
     mapping(address => uint256) private time;
     mapping(address => bool) public registered;
+
+    event NewStake(address indexed stakeholder, address indexed referrer, uint indexed stakes);
+    event Stake(address indexed stakeholder, uint indexed stakes);
+    event ClaimReward(address indexed stakeholder, uint value);
+    event WeeklyRewardShared(uint indexed amount);
+    event RemoveStakes(uint indexed initalStakes, uint indexed currentStakes);
  
     constructor(IERC20 _contractAddress) public {
         contractAddress = _contractAddress;
@@ -175,7 +181,7 @@ contract FlexiCoinStaking is Ownable {
     }
  
 
-    function addReferral(address _referrer) private {
+    function setReferral(address _referrer) private {
         require(msg.sender != _referrer, "cannot add your address as your referral");
         require(registered[_referrer], "Referrer is not a stakeholder");
         registered[msg.sender] = true;
@@ -208,13 +214,15 @@ contract FlexiCoinStaking is Ownable {
         stakes[msg.sender] = availableForstake;
         stakeholdersCount = stakeholdersCount.add(1);
         
-        addReferral(_referrer); // add referral to stakeholders
+        setReferral(_referrer);
+        emit NewStake(msg.sender, _referrer, _stake);
         return true;
     }
  
     function stake(uint _stake) external validateStake(_stake) returns(bool) {
         uint availableForstake = stakingCost(_stake);
         stakes[msg.sender] = stakes[msg.sender].add(availableForstake);
+        emit Stake(msg.sender, _stake);
         return true;
     }
  
@@ -229,16 +237,18 @@ contract FlexiCoinStaking is Ownable {
         require(stakes[_user] > 0, "stakes must be above 0");
         require(stakes[_user] >= _stake, "Amount is greater than current stake");
  
-        uint _balance = stakes[_user];
-        stakes[_user] = _balance.sub(_stake);
+        uint _initialStakes = stakes[_user];
+        stakes[_user] = _initialStakes.sub(_stake);
         
-        totalStakes = totalStakes.sub(_stake);
         uint _withdrawlCost = _stake.mul(20).div(100);
         stakingPool = stakingPool.add(_withdrawlCost);
-        _balance = _balance.sub(_withdrawlCost);
+        totalStakes = totalStakes.sub(_stake);
+
+        uint _balance = _stake.sub(_withdrawlCost);
         
         contractAddress.transfer(_user, _balance);
         if(stakes[_user] == 0) removeStakeholder();
+        emit RemoveStakes(_initialStakes, _balance);
     }
  
     function removeStakeholder() private  {
@@ -253,6 +263,7 @@ contract FlexiCoinStaking is Ownable {
         setTime = block.timestamp + 7 days;
         rewardToShare = stakingPool.div(2);
         stakingPool = stakingPool.sub(rewardToShare);
+        emit WeeklyRewardShared(rewardToShare);
     }
  
     function claimweeklyRewards() external {
@@ -267,12 +278,14 @@ contract FlexiCoinStaking is Ownable {
         rewardToShare = rewardToShare.sub(_reward);
         
         uint referrerFee = _reward.mul(10).div(100); // calculate 10% referral fee
-        uint userRewardAfterReferralFee = _reward.sub(referrerFee);
-        stakes[_user] = stakes[_user].add(userRewardAfterReferralFee); // updates user's balance with the reward
+        uint userRewardAfterReferrerFee = _reward.sub(referrerFee);
+        stakes[_user] = stakes[_user].add(userRewardAfterReferrerFee); // updates user's balance with the reward
  
         address _referrer = addressThatReferred[_user];
         bonus[_referrer].uplineProfit = bonus[_referrer].uplineProfit.add(referrerFee);
-        stakes[_referrer] = stakes[_referrer].add(referrerFee); // updates the referral balance with the stake rewards
+        stakes[_referrer] = stakes[_referrer].add(referrerFee); // updates the referrer balance with the stake rewards
+        
+        emit ClaimReward(msg.sender, userRewardAfterReferrerFee);
     }
 
  
