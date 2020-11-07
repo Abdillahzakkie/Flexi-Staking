@@ -134,7 +134,6 @@ contract FlexiCoinStaking is Ownable {
     uint private rewardToShare;
  
     struct Referrals {
-        uint referralcount;
         address[] referredAddresses;    
     }
  
@@ -186,7 +185,6 @@ contract FlexiCoinStaking is Ownable {
         require(registered[_referrer], "Referrer is not a stakeholder");
         registered[msg.sender] = true;
 
-        referral[_referrer].referralcount =  referral[_referrer].referralcount.add(1);   
         referral[_referrer].referredAddresses.push(msg.sender);
         addressThatReferred[msg.sender] = _referrer;
     }
