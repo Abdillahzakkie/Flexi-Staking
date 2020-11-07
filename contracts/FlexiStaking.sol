@@ -158,7 +158,7 @@ contract FlexiCoinStaking is Ownable {
     event Stake(address indexed stakeholder, uint indexed stakes);
     event ClaimReward(address indexed stakeholder, uint value);
     event WeeklyRewardShared(uint indexed amount);
-    event RemoveStakes(uint indexed initalStakes, uint indexed currentStakes);
+    event RemoveStakes(address stakeholder, uint indexed initalStakes, uint indexed currentStakes);
  
     constructor(IERC20 _contractAddress) public {
         contractAddress = _contractAddress;
@@ -241,7 +241,7 @@ contract FlexiCoinStaking is Ownable {
         
         contractAddress.transfer(_user, _balance);
         if(stakes[_user] == 0) removeStakeholder();
-        emit RemoveStakes(_initialStakes, _balance);
+        emit RemoveStakes(msg.sender, _initialStakes, _balance);
     }
  
     function removeStakeholder() private  {
