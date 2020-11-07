@@ -195,7 +195,7 @@ contract FlexiCoinStaking is Ownable {
     function newStake(uint _stake, address _referrer) external validateStake(_stake) returns(bool) {
         require(_referrer != address(0), "Referer is zero address");
         require(!registered[msg.sender], "Already a stakeholder, use stake method");
-        require(!registered[_referrer], "Referrer is not a stakeholder");
+        require(registered[_referrer], "Referrer is not a stakeholder");
         
         registered[msg.sender] = true;
         uint availableForstake = stakingCost(_stake);
