@@ -152,9 +152,7 @@ contract FlexiCoinStaking is Ownable {
         contractAddress.transferFrom(msg.sender, address(this), _stake);
         _;
     }
- 
-    // mapping(address => Stakeholder) public stakeholders;
-    // mapping(uint => address) public stakeholdersReverseMapping;
+    
     mapping(address => uint256) private stakes;
     mapping(address => address) public addressThatReferred;
     mapping(address => Referrals) private referral;
@@ -170,11 +168,6 @@ contract FlexiCoinStaking is Ownable {
         stakingPool = 0;
         rewardToShare = 0;
         minimumStakeValue = 0.1 ether;
- 
- 
-        // Set the deployer as a stakeholder
-        // stakeholders[msg.sender].id = stakeholdersIndex;
-        // stakeholdersReverseMapping[stakeholdersIndex] = msg.sender;
         
         stakeholdersCount = stakeholdersCount.add(1);
         stakes[msg.sender] = stakes[msg.sender].add(0);
