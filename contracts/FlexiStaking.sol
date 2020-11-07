@@ -251,7 +251,7 @@ contract FlexiCoinStaking is Ownable {
     function removeStakeholder() private  {
         address _stakeholder = msg.sender;
         require(registered[_stakeholder], "Not a stakeholder");
-        registered[msg.sender] = false;
+        registered[_stakeholder] = false;
     }
  
     function shareWeeklyRewards() external onlyOwner {
