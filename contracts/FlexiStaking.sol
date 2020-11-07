@@ -199,10 +199,10 @@ contract FlexiCoinStaking is Ownable {
         return contractAddress.allowance(_sender, address(this));
     }
  
-    function newStake(uint _stake, address referree) external validateStake(_stake) returns(bool) {
-        require(referree != address(0), "Referee is zero address");
+    function newStake(uint _stake, address _referral) external validateStake(_stake) returns(bool) {
+        require(_referral != address(0), "Referee is zero address");
         require(!registered[msg.sender], "Already a stakeholder, use stake method");
-        require(!registered[referree], "Already a stakeholder");
+        require(!registered[_referral], "Already a stakeholder");
         
         uint availableForstake = stakingCost(_stake);
         stakes[msg.sender] = availableForstake;
