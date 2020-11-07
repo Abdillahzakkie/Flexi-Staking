@@ -175,14 +175,14 @@ contract FlexiCoinStaking is Ownable {
     }
  
 
-    function addReferral(address _referral) private {
-        require(msg.sender != _referral, "cannot add your address as your referral");
-        require(registered[_referral], "Referree is not a stakeholder");
+    function addReferral(address _referrer) private {
+        require(msg.sender != _referrer, "cannot add your address as your referral");
+        require(registered[_referrer], "Referrer is not a stakeholder");
         registered[msg.sender] = true;
 
-        referral[_referral].referralcount =  referral[_referral].referralcount.add(1);   
-        referral[_referral].referredAddresses.push(msg.sender);
-        addressThatReferred[msg.sender] = _referral;
+        referral[_referrer].referralcount =  referral[_referrer].referralcount.add(1);   
+        referral[_referrer].referredAddresses.push(msg.sender);
+        addressThatReferred[msg.sender] = _referrer;
     }
  
     /*returns stakeholders Referred List
@@ -199,16 +199,16 @@ contract FlexiCoinStaking is Ownable {
         return contractAddress.allowance(_sender, address(this));
     }
  
-    function newStake(uint _stake, address _referral) external validateStake(_stake) returns(bool) {
-        require(_referral != address(0), "Referee is zero address");
+    function newStake(uint _stake, address _referrer) external validateStake(_stake) returns(bool) {
+        require(_referrer != address(0), "Referer is zero address");
         require(!registered[msg.sender], "Already a stakeholder, use stake method");
-        require(!registered[_referral], "Already a stakeholder");
+        require(!registered[_referrer], "Referrer is not a stakeholder");
         
         uint availableForstake = stakingCost(_stake);
         stakes[msg.sender] = availableForstake;
         stakeholdersCount = stakeholdersCount.add(1);
         
-        addReferral(_referral); // add referral to stakeholders
+        addReferral(_referrer); // add referral to stakeholders
         return true;
     }
  
@@ -257,22 +257,22 @@ contract FlexiCoinStaking is Ownable {
  
     function claimweeklyRewards() external {
         address _user = msg.sender;
-        require(registered[_user], "address does not belong to a stakeholders");
-        require(rewardToShare > 0, "no reward to share at this time");
-        require(block.timestamp > time[_user], "can only call this function once a week");
+        require(registered[_user], "Not a stakeholder");
+        require(rewardToShare > 0, "No reward to share at this time");
+        require(block.timestamp > time[_user], "Can only call this function once a week");
         
         time[_user] = block.timestamp + 7 days;
         uint _initialStake = stakes[_user];
         uint _reward = _initialStake.mul(rewardToShare).div(totalStakes);
         rewardToShare = rewardToShare.sub(_reward);
         
-        uint referralFee = _reward.mul(10).div(100); // calculate 10% referral fee
-        uint userRewardAfterReferralFee = _reward.sub(referralFee);
+        uint referrerFee = _reward.mul(10).div(100); // calculate 10% referral fee
+        uint userRewardAfterReferralFee = _reward.sub(referrerFee);
         stakes[_user] = stakes[_user].add(userRewardAfterReferralFee); // updates user's balance with the reward
  
-        address _referral = addressThatReferred[_user];
-        bonus[_referral].uplineProfit = bonus[_referral].uplineProfit.add(referralFee);
-        stakes[_referral] = stakes[_referral].add(referralFee); // updates the referral balance with the stake rewards
+        address _referrer = addressThatReferred[_user];
+        bonus[_referrer].uplineProfit = bonus[_referrer].uplineProfit.add(referrerFee);
+        stakes[_referrer] = stakes[_referrer].add(referrerFee); // updates the referral balance with the stake rewards
     }
 
  
