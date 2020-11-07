@@ -136,11 +136,6 @@ contract FlexiCoinStaking is Ownable {
     struct Referrals {
         address[] referredAddresses;    
     }
- 
-    struct ReferralBonus {
-        uint uplineProfit;
-    }
- 
     modifier validateStake(uint _stake) {
         require(_stake >= minimumStakeValue, "Amount is below minimum stake value.");
         contractAddress.transferFrom(msg.sender, address(this), _stake);
@@ -150,7 +145,7 @@ contract FlexiCoinStaking is Ownable {
     mapping(address => uint256) private stakes;
     mapping(address => address) public addressThatReferred;
     mapping(address => Referrals) private referral;
-    mapping(address => ReferralBonus) public bonus;
+    mapping(address => uint) public bonus;
     mapping(address => uint256) private time;
     mapping(address => bool) public registered;
 
@@ -175,7 +170,7 @@ contract FlexiCoinStaking is Ownable {
     }
  
 
-    function setReferral(address _referrer) private {
+    function setReferrer(address _referrer) private {
         require(msg.sender != _referrer, "cannot add your address as your referral");
         require(registered[_referrer], "Referrer is not a stakeholder");
 
@@ -207,7 +202,7 @@ contract FlexiCoinStaking is Ownable {
         stakes[msg.sender] = availableForstake;
         stakeholdersCount = stakeholdersCount.add(1);
         
-        setReferral(_referrer);
+        setReferrer(_referrer);
         emit NewStake(msg.sender, _referrer, _stake);
         return true;
     }
@@ -275,7 +270,7 @@ contract FlexiCoinStaking is Ownable {
         stakes[_user] = stakes[_user].add(userRewardAfterReferrerFee); // updates user's balance with the reward
  
         address _referrer = addressThatReferred[_user];
-        bonus[_referrer].uplineProfit = bonus[_referrer].uplineProfit.add(referrerFee);
+        bonus[_referrer] = bonus[_referrer].add(referrerFee);
         stakes[_referrer] = stakes[_referrer].add(referrerFee); // updates the referrer balance with the stake rewards
         
         emit ClaimReward(msg.sender, userRewardAfterReferrerFee);
