@@ -17,7 +17,7 @@ contract Ownable is Context {
  
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
  
-    constructor() {
+    constructor() public {
         address msgSender = _msgSender();
         _owner = msgSender;
         emit OwnershipTransferred(address(0), msgSender);
@@ -168,7 +168,7 @@ contract FlexiCoinStaking is Ownable {
     mapping(address => uint256) private time;
     mapping(address => bool) public registered;
  
-    constructor(IERC20 _contractAddress) {
+    constructor(IERC20 _contractAddress) public {
         contractAddress = _contractAddress;
         stakeholdersIndex = 0;
         setTime = 0;
