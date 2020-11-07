@@ -143,11 +143,6 @@ contract FlexiCoinStaking is Ownable {
  
     modifier validateStake(uint _stake) {
         require(_stake >= minimumStakeValue, "Amount is below minimum stake value.");
-        require(contractAddress.balanceOf(msg.sender) >= _stake, "Must have enough balance to stake");
-        require(
-            contractAddress.allowance(msg.sender, address(this)) >= _stake, 
-            "Must approve tokens before staking"
-        );
         contractAddress.transferFrom(msg.sender, address(this), _stake);
         _;
     }
