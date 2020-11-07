@@ -218,27 +218,6 @@ contract FlexiCoinStaking is Ownable {
         return stakes[_stakeholder];
     }
  
-    // function removeStake(uint _stake) external {
-    //     address _user = msg.sender;
-        
-    //     require(registered[_user], "Not a stakeholder");
-    //     require(stakes[_user] > 0, "stakes must be above 0");
-    //     require(stakes[_user] >= _stake, "Amount is greater than current stake");
- 
-    //     uint _initialStakes = stakes[_user];
-    //     stakes[_user] = _initialStakes.sub(_stake);
-        
-    //     uint _withdrawlCost = _stake.mul(20).div(100);
-    //     stakingPool = stakingPool.add(_withdrawlCost);
-    //     totalStakes = totalStakes.sub(_stake);
-
-    //     uint _balance = _initialStakes.sub(_withdrawlCost);
-        
-    //     contractAddress.transfer(_user, _balance);
-    //     if(stakes[_user] == 0) removeStakeholder();
-    //     emit RemoveStakes(msg.sender, _initialStakes, _balance);
-    // }
-    
     
     function removeStake(uint _stake) external {
         require(stakes[msg.sender] > 0, "stakes must be above 0");
