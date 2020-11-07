@@ -127,12 +127,11 @@ contract FlexiCoinStaking is Ownable {
  
     IERC20 public contractAddress;
     uint public stakingPool;
-    uint public stakeholdersIndex;
+    uint public stakeholdersCount;
     uint public totalStakes;
     uint private setTime;
     uint public minimumStakeValue;
- 
-    uint rewardToShare;
+    uint private rewardToShare;
  
     struct Referrals {
         uint referralcount;
@@ -141,11 +140,6 @@ contract FlexiCoinStaking is Ownable {
  
     struct ReferralBonus {
         uint uplineProfit;
-    }
- 
-    struct Stakeholder {
-         uint id;
-         uint stakes;
     }
  
     modifier validateStake(uint _stake) {
@@ -159,8 +153,8 @@ contract FlexiCoinStaking is Ownable {
         _;
     }
  
-    mapping(address => Stakeholder) public stakeholders;
-    mapping(uint => address) public stakeholdersReverseMapping;
+    // mapping(address => Stakeholder) public stakeholders;
+    // mapping(uint => address) public stakeholdersReverseMapping;
     mapping(address => uint256) private stakes;
     mapping(address => address) public addressThatReferred;
     mapping(address => Referrals) private referral;
@@ -170,7 +164,7 @@ contract FlexiCoinStaking is Ownable {
  
     constructor(IERC20 _contractAddress) public {
         contractAddress = _contractAddress;
-        stakeholdersIndex = 0;
+        stakeholdersCount = 0;
         setTime = 0;
         totalStakes = 0;
         stakingPool = 0;
@@ -179,9 +173,10 @@ contract FlexiCoinStaking is Ownable {
  
  
         // Set the deployer as a stakeholder
-        stakeholders[msg.sender].id = stakeholdersIndex;
-        stakeholdersReverseMapping[stakeholdersIndex] = msg.sender;
-        stakeholdersIndex = stakeholdersIndex.add(1);
+        // stakeholders[msg.sender].id = stakeholdersIndex;
+        // stakeholdersReverseMapping[stakeholdersIndex] = msg.sender;
+        
+        stakeholdersCount = stakeholdersCount.add(1);
         stakes[msg.sender] = stakes[msg.sender].add(0);
         registered[msg.sender] = true;
     }
@@ -190,11 +185,11 @@ contract FlexiCoinStaking is Ownable {
     function addReferee(address _refereeAddress) private {
         require(msg.sender != _refereeAddress, "cannot add your address as your referral");
         require(registered[_refereeAddress], "Referree is not a stakeholder");
- 
+        registered[msg.sender] = true;
+
         referral[_refereeAddress].referralcount =  referral[_refereeAddress].referralcount.add(1);   
         referral[_refereeAddress].referredAddresses.push(msg.sender);
         addressThatReferred[msg.sender] = _refereeAddress;
-        registered[msg.sender] = true;
     }
  
     /*returns stakeholders Referred List
@@ -214,12 +209,13 @@ contract FlexiCoinStaking is Ownable {
     function newStake(uint _stake, address referree) external validateStake(_stake) returns(bool) {
         require(referree != address(0), "Referee is zero address");
         require(!registered[msg.sender], "Already a stakeholder, use stake method");
-        
-        addStakeholder(); //add user to stakeholder
-        addReferee(referree);
+        require(!registered[referree], "Already a stakeholder");
         
         uint availableForstake = stakingCost(_stake);
         stakes[msg.sender] = availableForstake;
+        stakeholdersCount = stakeholdersCount.add(1);
+        
+        addReferee(referree); // add referral to stakeholders
         return true;
     }
  
@@ -237,7 +233,7 @@ contract FlexiCoinStaking is Ownable {
         address _user = msg.sender;
         
         require(registered[_user], "Not a stakeholder");
-        require(stakes[_user] > 0, 'stakes must be above 0');
+        require(stakes[_user] > 0, "stakes must be above 0");
         require(stakes[_user] >= _stake, "Amount is greater than current stake");
  
         uint _balance = stakes[_user];
@@ -252,40 +248,14 @@ contract FlexiCoinStaking is Ownable {
         if(stakes[_user] == 0) removeStakeholder();
     }
  
-    function addStakeholder() private {
-        address _stakeholder = msg.sender;
-        require(!registered[_stakeholder], "Already a stakeholder");    
-        stakeholders[_stakeholder].id = stakeholdersIndex;
-        stakeholdersReverseMapping[stakeholdersIndex] = _stakeholder;
-        stakeholdersIndex = stakeholdersIndex.add(1);
-    }
- 
     function removeStakeholder() private  {
         address _stakeholder = msg.sender;
         require(registered[_stakeholder], "Not a stakeholder");
- 
-        // get id of the stakeholders to be deleted
-        uint swappableId = stakeholders[_stakeholder].id;
- 
-        // swap the stakeholders info and update admins mapping
-        // get the last stakeholdersReverseMapping address for swapping
-        address swappableAddress = stakeholdersReverseMapping[stakeholdersIndex -1];
- 
-        // swap the stakeholdersReverseMapping and then reduce stakeholder index
-        stakeholdersReverseMapping[swappableId] = stakeholdersReverseMapping[stakeholdersIndex - 1];
- 
-        // also remap the stakeholder id
-        stakeholders[swappableAddress].id = swappableId;
- 
-        // delete and reduce admin index 
-        delete(stakeholders[_stakeholder]);
-        delete(stakeholdersReverseMapping[stakeholdersIndex - 1]);
-        stakeholdersIndex = stakeholdersIndex.sub(1);
         registered[msg.sender] = false;
     }
  
     function shareWeeklyRewards() external onlyOwner {
-        require(block.timestamp > setTime, 'wait a week from last call');
+        require(block.timestamp > setTime, "wait a week from last call");
         stakingPool = stakingPool.add(rewardToShare);
         setTime = block.timestamp + 7 days;
         rewardToShare = stakingPool.div(2);
@@ -294,20 +264,17 @@ contract FlexiCoinStaking is Ownable {
  
     function claimweeklyRewards() external {
         address _user = msg.sender;
-        
-        require(registered[_user], 'address does not belong to a stakeholders');
-        require(rewardToShare > 0, 'no reward to share at this time');
-        require(block.timestamp > time[_user], 'can only call this function once a week');
+        require(registered[_user], "address does not belong to a stakeholders");
+        require(rewardToShare > 0, "no reward to share at this time");
+        require(block.timestamp > time[_user], "can only call this function once a week");
         
         time[_user] = block.timestamp + 7 days;
         uint _initialStake = stakes[_user];
         uint _reward = _initialStake.mul(rewardToShare).div(totalStakes);
-        
         rewardToShare = rewardToShare.sub(_reward);
- 
-        uint referralFee = _reward.mul(10).div(100);
-        uint userRewardAfterReferralFee = _reward.sub(referralFee);
         
+        uint referralFee = _reward.mul(10).div(100); // calculate 10% referral fee
+        uint userRewardAfterReferralFee = _reward.sub(referralFee);
         stakes[_user] = stakes[_user].add(userRewardAfterReferralFee); // updates user's balance with the reward
  
         address _referral = addressThatReferred[_user];
