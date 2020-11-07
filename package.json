@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/Abdillahzakkie/Flexi-Staking#readme",
   "devDependencies": {
+    "@openzeppelin/test-helpers": "^0.5.9",
     "ganache-cli": "^6.12.1",
     "truffle": "^5.1.52"
   }

@@ -183,7 +183,6 @@ contract FlexiCoinStaking is Ownable {
     function setReferral(address _referrer) private {
         require(msg.sender != _referrer, "cannot add your address as your referral");
         require(registered[_referrer], "Referrer is not a stakeholder");
-        registered[msg.sender] = true;
 
         referral[_referrer].referredAddresses.push(msg.sender);
         addressThatReferred[msg.sender] = _referrer;
@@ -208,6 +207,7 @@ contract FlexiCoinStaking is Ownable {
         require(!registered[msg.sender], "Already a stakeholder, use stake method");
         require(!registered[_referrer], "Referrer is not a stakeholder");
         
+        registered[msg.sender] = true;
         uint availableForstake = stakingCost(_stake);
         stakes[msg.sender] = availableForstake;
         stakeholdersCount = stakeholdersCount.add(1);
